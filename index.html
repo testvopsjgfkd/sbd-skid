@@ -4,108 +4,98 @@
   <meta charset="UTF-8">
   <title>VPS Management</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #fff;
-      text-align: center;
-      padding: 30px;
-    }
-    h1 { color: #00ffcc; }
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 5px;
-      border: none;
-    }
-    input {
-      width: 300px;
-    }
-    button {
-      background: #00ffcc;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background: #00ccaa;
-    }
-    table {
-      width: 80%;
-      margin: 20px auto;
-      border-collapse: collapse;
-      background: #222;
-    }
-    th, td {
-      border: 1px solid #444;
-      padding: 10px;
-    }
-    th { background: #00ffcc; color: #000; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+    header { background: #007bff; color: white; padding: 15px; text-align: center; }
+    main { padding: 20px; max-width: 800px; margin: auto; }
+    .card { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    input, button { padding: 10px; margin: 8px 0; width: 100%; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
+    button { background: #007bff; color: white; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background: #007bff; color: white; }
+    #result { margin-top: 10px; font-weight: bold; color: green; }
   </style>
 </head>
 <body>
-  <h1>🚀 VPS User Manager</h1>
+  <header>
+    <h1>🚀 VPS Management</h1>
+  </header>
 
-  <div>
-    <input type="text" id="token" placeholder="Nhập GitHub Token của bạn">
-    <button onclick="createVPS()">Create VPS</button>
-  </div>
+  <main>
+    <div class="card">
+      <h2>Create VPS</h2>
+      <input type="text" id="token" placeholder="Enter your GitHub Token">
+      <button onclick="createVPS()">Create VPS</button>
+      <p id="result"></p>
+    </div>
 
-  <h2>Danh sách VPS Users</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>User</th>
-        <th>Remote Link</th>
-      </tr>
-    </thead>
-    <tbody id="userTable">
-      <tr><td colspan="2">Đang tải...</td></tr>
-    </tbody>
-  </table>
+    <div class="card">
+      <h2>Users</h2>
+      <button onclick="loadUsers()">Refresh Users</button>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Repo</th>
+            <th>Status</th>
+            <th>Remote Link</th>
+          </tr>
+        </thead>
+        <tbody id="userTable"></tbody>
+      </table>
+    </div>
+  </main>
 
-  <script>
-    const API_BASE = "https://vps-1z6a.onrender.com"; // thay đúng domain Render của bạn
+<script>
+  // 🔥 API backend của bạn (cố định)
+  const API_BASE = "https://vps-1z6a.onrender.com";
 
-    async function loadUsers() {
-      try {
-        const res = await fetch(API_BASE + "/vpsuser");
-        const text = await res.text();
-        document.getElementById("userTable").innerHTML =
-          "<tr><td colspan='2'>" + text + "</td></tr>";
-      } catch (err) {
-        document.getElementById("userTable").innerHTML =
-          "<tr><td colspan='2'>❌ Lỗi khi load users</td></tr>";
-      }
+  async function createVPS() {
+    const token = document.getElementById("token").value;
+    if (!token) {
+      alert("Please enter a GitHub token!");
+      return;
     }
+    try {
+      let res = await fetch(`${API_BASE}/api`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ github_token: token })
+      });
+      let data = await res.json();
+      document.getElementById("result").innerText = 
+        data.remote_link ? `✅ Created: ${data.remote_link}` : `❌ Error: ${JSON.stringify(data)}`;
+    } catch (err) {
+      console.error(err);
+      alert("Failed to call API!");
+    }
+  }
 
-    async function createVPS() {
-      const token = document.getElementById("token").value.trim();
-      if (!token) {
-        alert("Vui lòng nhập GitHub Token!");
-        return;
-      }
-
-      try {
-        const res = await fetch(API_BASE + "/api", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ github_token: token })
+  async function loadUsers() {
+    try {
+      let res = await fetch(`${API_BASE}/vpsuser`);
+      let data = await res.json();
+      const tbody = document.getElementById("userTable");
+      tbody.innerHTML = "";
+      if (data.users && data.users.length > 0) {
+        data.users.forEach((u, i) => {
+          let row = `<tr>
+            <td>${i+1}</td>
+            <td>${u.repo || "-"}</td>
+            <td>${u.status || "-"}</td>
+            <td><a href="${u.remote_link}" target="_blank">${u.remote_link || "-"}</a></td>
+          </tr>`;
+          tbody.innerHTML += row;
         });
-
-        const data = await res.json();
-        if (data.status === "success") {
-          alert("✅ VPS Created!\nRemote: " + data.remote_link);
-        } else {
-          alert("❌ Error: " + JSON.stringify(data));
-        }
-        loadUsers();
-      } catch (err) {
-        alert("❌ Lỗi kết nối API!");
+      } else {
+        tbody.innerHTML = `<tr><td colspan="4">No users found</td></tr>`;
       }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load users!");
     }
-
-    // load danh sách user khi mở web
-    loadUsers();
-  </script>
+  }
+</script>
 </body>
 </html>
