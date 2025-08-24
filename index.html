@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VPS Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      padding: 30px;
+    }
+    h1 { color: #00ffcc; }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+    input {
+      width: 300px;
+    }
+    button {
+      background: #00ffcc;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #00ccaa;
+    }
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background: #222;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 10px;
+    }
+    th { background: #00ffcc; color: #000; }
+  </style>
+</head>
+<body>
+  <h1>🚀 VPS User Manager</h1>
+
+  <div>
+    <input type="text" id="token" placeholder="Nhập GitHub Token của bạn">
+    <button onclick="createVPS()">Create VPS</button>
+  </div>
+
+  <h2>Danh sách VPS Users</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Remote Link</th>
+      </tr>
+    </thead>
+    <tbody id="userTable">
+      <tr><td colspan="2">Đang tải...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    const API_BASE = "https://vps-1z6a.onrender.com"; // thay đúng domain Render của bạn
+
+    async function loadUsers() {
+      try {
+        const res = await fetch(API_BASE + "/vpsuser");
+        const text = await res.text();
+        document.getElementById("userTable").innerHTML =
+          "<tr><td colspan='2'>" + text + "</td></tr>";
+      } catch (err) {
+        document.getElementById("userTable").innerHTML =
+          "<tr><td colspan='2'>❌ Lỗi khi load users</td></tr>";
+      }
+    }
+
+    async function createVPS() {
+      const token = document.getElementById("token").value.trim();
+      if (!token) {
+        alert("Vui lòng nhập GitHub Token!");
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE + "/api", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ github_token: token })
+        });
+
+        const data = await res.json();
+        if (data.status === "success") {
+          alert("✅ VPS Created!\nRemote: " + data.remote_link);
+        } else {
+          alert("❌ Error: " + JSON.stringify(data));
+        }
+        loadUsers();
+      } catch (err) {
+        alert("❌ Lỗi kết nối API!");
+      }
+    }
+
+    // load danh sách user khi mở web
+    loadUsers();
+  </script>
+</body>
+</html>
