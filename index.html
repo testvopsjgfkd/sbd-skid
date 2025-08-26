@@ -4,41 +4,430 @@
   <meta charset="UTF-8">
   <title>VPS Creator</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 30px; max-width: 500px; margin: auto; }
-    input, button { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    .result { margin-top: 20px; font-weight: bold; }
-    .success { color: green; }
-    .error { color: red; }
-    .loading { color: orange; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+      color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px 0;
+    }
+
+    .header h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, #00d4aa, #00a8ff, #7c4dff);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientShift 3s ease-in-out infinite;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      color: #b8c6db;
+      opacity: 0.9;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px 15px 0 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 15px 20px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #00d4aa, #00a8ff);
+    }
+
+    .content {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0 0 15px 15px;
+      padding: 30px;
+      min-height: 400px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .input-group {
+      margin-bottom: 25px;
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    input[type="password"] {
+      width: 100%;
+      padding: 15px 20px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #00a8ff;
+      box-shadow: 0 0 20px rgba(0, 168, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    input[type="password"]::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 15px 25px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #00d4aa 0%, #00a8ff 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(0, 168, 255, 0.4);
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(0, 168, 255, 0.6);
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .success {
+      background: rgba(34, 197, 94, 0.2);
+      border: 2px solid rgba(34, 197, 94, 0.5);
+      color: #10b981;
+    }
+
+    .error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 2px solid rgba(239, 68, 68, 0.5);
+      color: #ef4444;
+    }
+
+    .loading {
+      background: rgba(251, 146, 60, 0.2);
+      border: 2px solid rgba(251, 146, 60, 0.5);
+      color: #f59e0b;
+    }
+
+    .vps-status {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .vps-status h3 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #e2e8f0;
+    }
+
+    .vps-status p {
+      color: #94a3b8;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+    }
+
+    .iframe-container {
+      width: 100%;
+      height: 500px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      margin-top: 20px;
+    }
+
+    .iframe-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .link-button {
+      display: inline-block;
+      color: #00a8ff;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 8px 15px;
+      border-radius: 5px;
+      background: rgba(0, 168, 255, 0.1);
+      border: 1px solid rgba(0, 168, 255, 0.3);
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+
+    .link-button:hover {
+      background: rgba(0, 168, 255, 0.2);
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 <body>
-  <h1>🚀 VPS Creator</h1>
-  <p>Nhập GitHub Token để khởi tạo VPS</p>
+  <canvas id="canvas"></canvas>
+  
+  <div class="container">
+    <div class="header">
+      <h1>🚀 VPS Creator</h1>
+      <p>Quản lý và tạo VPS một cách dễ dàng</p>
+    </div>
 
-  <input type="password" id="token" placeholder="Nhập GitHub Token...">
-  <button id="btnCreate" onclick="createVPS()">Create VPS</button>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('manager')">VPS Manager</button>
+      <button class="tab" onclick="switchTab('creator')">Create VPS</button>
+    </div>
 
-  <div id="result" class="result"></div>
+    <div class="content">
+      <!-- VPS Manager Tab -->
+      <div id="manager" class="tab-content active">
+        <div class="vps-status" id="vpsStatus">
+          <h3>Chưa có VPS nào</h3>
+          <p>Bạn chưa tạo VPS nào. Nhấn nút bên dưới để bắt đầu tạo VPS đầu tiên của bạn.</p>
+          <button class="btn btn-secondary" onclick="switchTab('creator')">
+            🚀 Tạo VPS Mới
+          </button>
+        </div>
+        
+        <div id="vpsActive" style="display: none;">
+          <h3 style="text-align: center; margin-bottom: 20px;">VPS đang hoạt động</h3>
+          <div id="vpsLink" style="text-align: center; margin-bottom: 20px;"></div>
+          <div class="iframe-container">
+            <iframe id="vncIframe" src="" title="VPS Console"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create VPS Tab -->
+      <div id="creator" class="tab-content">
+        <div class="input-group">
+          <label for="token">GitHub Token</label>
+          <input type="password" id="token" placeholder="Nhập GitHub Token của bạn...">
+        </div>
+        
+        <button class="btn btn-primary" id="btnCreate" onclick="createVPS()">
+          <span id="btnText">🚀 Tạo VPS</span>
+        </button>
+
+        <div id="result" class="result" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
+    // Canvas animation
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const particles = [];
+    const particleCount = 100;
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 2 + 1
+      });
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(particle => {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        
+        if (particle.x < 0) particle.x = canvas.width;
+        if (particle.x > canvas.width) particle.x = 0;
+        if (particle.y < 0) particle.y = canvas.height;
+        if (particle.y > canvas.height) particle.y = 0;
+        
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.3 + 0.1})`;
+        ctx.fill();
+      });
+      
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Tab switching
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+    }
+
+    // VPS creation
+    let vpsData = null;
+
     async function createVPS() {
       const token = document.getElementById('token').value.trim();
       const btn = document.getElementById('btnCreate');
+      const btnText = document.getElementById('btnText');
       const result = document.getElementById('result');
 
       if (!token) {
-        alert("Vui lòng nhập GitHub Token!");
+        showResult("error", "⚠️ Vui lòng nhập GitHub Token!");
         return;
       }
 
       btn.disabled = true;
-      result.className = "result loading";
-      result.innerText = "⏳ Creating VPS...";
+      btnText.innerHTML = '<span class="loading-spinner"></span>Đang tạo VPS...';
+      showResult("loading", "⏳ Đang khởi tạo VPS, vui lòng đợi...");
 
       try {
-        const res = await fetch("https://vps-1z6a.onrender.com/api", { // 🔹 API backend của bạn
+        const res = await fetch("https://vps-1z6a.onrender.com/api", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ github_token: token })
@@ -47,19 +436,45 @@
         const data = await res.json();
 
         if (res.ok && data.status === "success") {
-          result.className = "result success";
-          result.innerHTML = `✅ VPS đã sẵn sàng: <a href="${data.remote_link}" target="_blank">${data.remote_link}</a>`;
+          vpsData = data;
+          showResult("success", `✅ VPS đã được tạo thành công!`);
+          
+          setTimeout(() => {
+            switchTab('manager');
+            showActiveVPS(data.remote_link);
+          }, 2000);
         } else {
-          result.className = "result error";
-          result.innerText = "❌ Error: " + (data.error || "Unknown error");
+          showResult("error", "❌ Lỗi: " + (data.error || "Không xác định"));
         }
       } catch (err) {
-        result.className = "result error";
-        result.innerText = "⚠️ Lỗi kết nối: " + err.message;
+        showResult("error", "⚠️ Lỗi kết nối: " + err.message);
       } finally {
         btn.disabled = false;
+        btnText.innerHTML = "🚀 Tạo VPS";
       }
     }
+
+    function showResult(type, message) {
+      const result = document.getElementById('result');
+      result.className = `result ${type}`;
+      result.innerHTML = message;
+      result.style.display = 'block';
+    }
+
+    function showActiveVPS(link) {
+      document.getElementById('vpsStatus').style.display = 'none';
+      document.getElementById('vpsActive').style.display = 'block';
+      document.getElementById('vpsLink').innerHTML = `
+        <a href="${link}" target="_blank" class="link-button">🔗 Mở VPS trong tab mới</a>
+      `;
+      document.getElementById('vncIframe').src = link;
+    }
+
+    // Reset form when switching to creator tab
+    document.querySelector('[onclick="switchTab(\'creator\')"]').addEventListener('click', () => {
+      document.getElementById('token').value = '';
+      document.getElementById('result').style.display = 'none';
+    });
   </script>
 </body>
 </html>
